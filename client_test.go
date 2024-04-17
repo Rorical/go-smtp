@@ -34,7 +34,7 @@ func TestClientAuthTrimSpace(t *testing.T) {
 		strings.NewReader(server),
 		&wrote,
 	}
-	c := NewClient(fake)
+	c := NewClient(fake, "localhost")
 	c.didHello = true
 	c.Auth(toServerNoRespAuth{})
 	c.Close()
@@ -188,7 +188,7 @@ func TestBasic_SMTPError(t *testing.T) {
 		strings.NewReader(faultyServer),
 		&wrote,
 	}
-	c := NewClient(fake)
+	c := NewClient(fake, "localhost")
 
 	err := c.Mail("whatever", nil)
 	if err == nil {
@@ -267,7 +267,7 @@ func TestClient_TooLongLine(t *testing.T) {
 		pr,
 		&wrote,
 	}
-	c := NewClient(fake)
+	c := NewClient(fake, "localhost")
 
 	err := c.Mail("whatever", nil)
 	if err != ErrTooLongLine {
@@ -332,7 +332,7 @@ func TestNewClient(t *testing.T) {
 	}
 	var fake faker
 	fake.ReadWriter = bufio.NewReadWriter(bufio.NewReader(strings.NewReader(server)), bcmdbuf)
-	c := NewClient(fake)
+	c := NewClient(fake, "localhost")
 	defer c.Close()
 	if ok, args := c.Extension("aUtH"); !ok || args != "LOGIN PLAIN" {
 		t.Fatalf("Expected AUTH supported")
@@ -370,7 +370,7 @@ func TestNewClient2(t *testing.T) {
 	bcmdbuf := bufio.NewWriter(&cmdbuf)
 	var fake faker
 	fake.ReadWriter = bufio.NewReadWriter(bufio.NewReader(strings.NewReader(server)), bcmdbuf)
-	c := NewClient(fake)
+	c := NewClient(fake, "localhost")
 	defer c.Close()
 	if ok, _ := c.Extension("DSN"); ok {
 		t.Fatalf("Shouldn't support DSN")
@@ -413,7 +413,7 @@ func TestHello(t *testing.T) {
 		bcmdbuf := bufio.NewWriter(&cmdbuf)
 		var fake faker
 		fake.ReadWriter = bufio.NewReadWriter(bufio.NewReader(strings.NewReader(server)), bcmdbuf)
-		c := NewClient(fake)
+		c := NewClient(fake, "localhost")
 		defer c.Close()
 		c.serverName = "fake.host"
 		c.localName = "customhost"
@@ -540,7 +540,7 @@ func TestAuthFailed(t *testing.T) {
 	bcmdbuf := bufio.NewWriter(&cmdbuf)
 	var fake faker
 	fake.ReadWriter = bufio.NewReadWriter(bufio.NewReader(strings.NewReader(server)), bcmdbuf)
-	c := NewClient(fake)
+	c := NewClient(fake, "localhost")
 	defer c.Close()
 
 	c.serverName = "smtp.google.com"
@@ -613,7 +613,7 @@ func TestTLSConnState(t *testing.T) {
 		defer close(clientDone)
 		cfg := &tls.Config{ServerName: "example.com"}
 		testHookStartTLS(cfg) // set the RootCAs
-		c, err := DialStartTLS(ln.Addr().String(), cfg)
+		c, err := DialStartTLS(ln.Addr().String(), cfg, "localhost")
 		if err != nil {
 			t.Errorf("Client dial: %v", err)
 			return
@@ -718,7 +718,7 @@ func init() {
 func doSendMail(hostPort string) error {
 	from := "joe1@example.com"
 	to := []string{"joe2@example.com"}
-	return SendMail(hostPort, nil, from, to, strings.NewReader("Subject: test\n\nhowdy!"))
+	return SendMail(hostPort, nil, from, to, strings.NewReader("Subject: test\n\nhowdy!"), "localhost")
 }
 
 // localhostCert is a PEM-encoded TLS cert generated from src/crypto/tls:
@@ -932,7 +932,7 @@ func TestClientXtext(t *testing.T) {
 		strings.NewReader(server),
 		&wrote,
 	}
-	c := NewClient(fake)
+	c := NewClient(fake, "localhost")
 	c.didHello = true
 	c.ext = map[string]string{"AUTH": "PLAIN", "DSN": ""}
 	email := "e=mc2@example.com"
@@ -979,7 +979,7 @@ func TestClientDSN(t *testing.T) {
 		strings.NewReader(server),
 		&wrote,
 	}
-	c := NewClient(fake)
+	c := NewClient(fake, "localhost")
 	c.didHello = true
 	c.ext = map[string]string{"DSN": ""}
 	c.Mail(dsnEmailRFC822, &MailOptions{

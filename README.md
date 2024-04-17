@@ -1,7 +1,7 @@
 # go-smtp
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/emersion/go-smtp.svg)](https://pkg.go.dev/github.com/emersion/go-smtp)
-[![builds.sr.ht status](https://builds.sr.ht/~emersion/go-smtp/commits.svg)](https://builds.sr.ht/~emersion/go-smtp/commits?)
+[![Go Reference](https://pkg.go.dev/badge/github.com/Rorical/go-smtp.svg)](https://pkg.go.dev/github.com/Rorical/go-smtp)
+[![builds.sr.ht status](https://builds.sr.ht/~Rorical/go-smtp/commits.svg)](https://builds.sr.ht/~Rorical/go-smtp/commits?)
 
 An ESMTP client and server library written in Go.
 

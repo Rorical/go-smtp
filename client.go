@@ -51,12 +51,12 @@ var defaultDialer = net.Dialer{Timeout: 30 * time.Second}
 //
 // This function returns a plaintext connection. To enable TLS, use
 // DialStartTLS.
-func Dial(addr string) (*Client, error) {
+func Dial(addr string, localName string) (*Client, error) {
 	conn, err := defaultDialer.Dial("tcp", addr)
 	if err != nil {
 		return nil, err
 	}
-	client := NewClient(conn)
+	client := NewClient(conn, localName)
 	client.serverName, _, _ = net.SplitHostPort(addr)
 	return client, nil
 }
@@ -65,7 +65,7 @@ func Dial(addr string) (*Client, error) {
 // The addr must include a port, as in "mail.example.com:smtps".
 //
 // A nil tlsConfig is equivalent to a zero tls.Config.
-func DialTLS(addr string, tlsConfig *tls.Config) (*Client, error) {
+func DialTLS(addr string, tlsConfig *tls.Config, localName string) (*Client, error) {
 	tlsDialer := tls.Dialer{
 		NetDialer: &defaultDialer,
 		Config:    tlsConfig,
@@ -74,7 +74,7 @@ func DialTLS(addr string, tlsConfig *tls.Config) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	client := NewClient(conn)
+	client := NewClient(conn, localName)
 	client.serverName, _, _ = net.SplitHostPort(addr)
 	return client, nil
 }
@@ -83,8 +83,8 @@ func DialTLS(addr string, tlsConfig *tls.Config) (*Client, error) {
 // at addr. The addr must include a port, as in "mail.example.com:smtp".
 //
 // A nil tlsConfig is equivalent to a zero tls.Config.
-func DialStartTLS(addr string, tlsConfig *tls.Config) (*Client, error) {
-	c, err := Dial(addr)
+func DialStartTLS(addr string, tlsConfig *tls.Config, localName string) (*Client, error) {
+	c, err := Dial(addr, localName)
 	if err != nil {
 		return nil, err
 	}
@@ -97,9 +97,9 @@ func DialStartTLS(addr string, tlsConfig *tls.Config) (*Client, error) {
 
 // NewClient returns a new Client using an existing connection and host as a
 // server name to be used when authenticating.
-func NewClient(conn net.Conn) *Client {
+func NewClient(conn net.Conn, localName string) *Client {
 	c := &Client{
-		localName: "localhost",
+		localName: localName,
 		// As recommended by RFC 5321. For DATA command reply (3xx one) RFC
 		// recommends a slightly shorter timeout but we do not bother
 		// differentiating these.
@@ -115,8 +115,8 @@ func NewClient(conn net.Conn) *Client {
 }
 
 // NewClientStartTLS creates a new Client and performs a STARTTLS command.
-func NewClientStartTLS(conn net.Conn, tlsConfig *tls.Config) (*Client, error) {
-	c := NewClient(conn)
+func NewClientStartTLS(conn net.Conn, tlsConfig *tls.Config, localName string) (*Client, error) {
+	c := NewClient(conn, localName)
 	if err := initStartTLS(c, tlsConfig); err != nil {
 		c.Close()
 		return nil, err
@@ -139,8 +139,8 @@ func initStartTLS(c *Client, tlsConfig *tls.Config) error {
 
 // NewClientLMTP returns a new LMTP Client (as defined in RFC 2033) using an
 // existing connection and host as a server name to be used when authenticating.
-func NewClientLMTP(conn net.Conn) *Client {
-	c := NewClient(conn)
+func NewClientLMTP(conn net.Conn, localName string) *Client {
+	c := NewClient(conn, localName)
 	c.lmtp = true
 	return c
 }
@@ -643,7 +643,7 @@ func (c *Client) SendMail(from string, to []string, r io.Reader) error {
 
 var testHookStartTLS func(*tls.Config) // nil, except for tests
 
-func sendMail(addr string, implicitTLS bool, a sasl.Client, from string, to []string, r io.Reader) error {
+func sendMail(addr string, implicitTLS bool, a sasl.Client, from string, to []string, r io.Reader, localName string) error {
 	if err := validateLine(from); err != nil {
 		return err
 	}
@@ -658,9 +658,9 @@ func sendMail(addr string, implicitTLS bool, a sasl.Client, from string, to []st
 		err error
 	)
 	if implicitTLS {
-		c, err = DialTLS(addr, nil)
+		c, err = DialTLS(addr, nil, localName)
 	} else {
-		c, err = DialStartTLS(addr, nil)
+		c, err = DialStartTLS(addr, nil, localName)
 	}
 	if err != nil {
 		return err
@@ -704,13 +704,13 @@ func sendMail(addr string, implicitTLS bool, a sasl.Client, from string, to []st
 // mechanisms and provide no support for DKIM signing (see go-msgauth), MIME
 // attachments (see the mime/multipart package or the go-message package), or
 // other mail functionality.
-func SendMail(addr string, a sasl.Client, from string, to []string, r io.Reader) error {
-	return sendMail(addr, false, a, from, to, r)
+func SendMail(addr string, a sasl.Client, from string, to []string, r io.Reader, localName string) error {
+	return sendMail(addr, false, a, from, to, r, localName)
 }
 
 // SendMailTLS works like SendMail, but with implicit TLS.
-func SendMailTLS(addr string, a sasl.Client, from string, to []string, r io.Reader) error {
-	return sendMail(addr, true, a, from, to, r)
+func SendMailTLS(addr string, a sasl.Client, from string, to []string, r io.Reader, localName string) error {
+	return sendMail(addr, true, a, from, to, r, localName)
 }
 
 // Extension reports whether an extension is support by the server.

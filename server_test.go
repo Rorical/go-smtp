@@ -12,8 +12,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Rorical/go-smtp"
 	"github.com/emersion/go-sasl"
-	"github.com/emersion/go-smtp"
 )
 
 type message struct {

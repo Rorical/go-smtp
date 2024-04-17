@@ -3,8 +3,8 @@ package backendutil
 import (
 	"io"
 
+	"github.com/Rorical/go-smtp"
 	"github.com/emersion/go-sasl"
-	"github.com/emersion/go-smtp"
 )
 
 // TransformBackend is a backend that transforms messages.
